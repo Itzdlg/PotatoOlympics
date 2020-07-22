@@ -1,0 +1,6 @@
+main: me.schooltests.potatoolympics.bedwars.POBedwars
+name: POBedwars
+version: "1.0"
+depend:
+  - PotatoOlympics
+  - ProtocolLib

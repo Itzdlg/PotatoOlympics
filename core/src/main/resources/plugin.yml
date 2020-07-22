@@ -1,0 +1,13 @@
+main: me.schooltests.potatoolympics.core.PotatoOlympics
+name: PotatoOlympics
+version: "1.0"
+commands:
+  startgame:
+    usage: /startgame
+    description: Start a game
+  setmode:
+    usage: /setmode
+    description: Set the mode of team sorting
+  setteam:
+    usage: /setteam
+    description: Set the team of a player
