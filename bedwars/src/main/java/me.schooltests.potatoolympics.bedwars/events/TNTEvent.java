@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 
@@ -36,7 +37,9 @@ public class TNTEvent implements Listener {
     @EventHandler
     public void onTNTDamage(EntityDamageByEntityEvent e) {
         if (POBedwars.getInstance().activeGame && e.getDamager() instanceof TNTPrimed) {
-            e.setDamage(e.getDamage()/2);
+            Vector v = e.getEntity().getLocation().toVector().subtract(e.getDamager().getLocation().toVector()).normalize();
+            e.getEntity().setVelocity(v.add(new Vector(0, 1, 0)));
+            e.setDamage(e.getDamage()/4);
         }
     }
 }

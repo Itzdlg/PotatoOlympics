@@ -1,104 +1,124 @@
 package me.schooltests.potatoolympics.bedwars.events;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import me.schooltests.potatoolympics.bedwars.POBedwars;
-import me.schooltests.potatoolympics.bedwars.util.ParticleEffect;
+import me.schooltests.potatoolympics.core.util.InventoryUtil;
+import net.minecraft.server.v1_8_R3.EnumParticle;
+import net.minecraft.server.v1_8_R3.PacketPlayOutEntityEquipment;
+import net.minecraft.server.v1_8_R3.PacketPlayOutWorldParticles;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.WeakHashMap;
 
 public class InvisEvent implements Listener {
-    private static final Map<Player, String> names = new WeakHashMap<>();
-    private static final Map<Player, Boolean> foot = new HashMap<>();
-    public InvisEvent() {
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(POBedwars.getInstance(), PacketType.Play.Server.PLAYER_INFO) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                if (event.getPacket().getPlayerInfoAction().read(0) != EnumWrappers.PlayerInfoAction.ADD_PLAYER) return;
-                List<PlayerInfoData> newPlayerInfoDataList = new ArrayList<>();
-                List<PlayerInfoData> playerInfoDataList = event.getPacket().getPlayerInfoDataLists().read(0);
-                for (PlayerInfoData playerInfoData : playerInfoDataList) {
-                    if (playerInfoData == null || playerInfoData.getProfile() == null || Bukkit.getPlayer(playerInfoData.getProfile().getUUID()) == null) { //Unknown Player
-                        newPlayerInfoDataList.add(playerInfoData);
-                        continue;
-                    }
-                    WrappedGameProfile profile = playerInfoData.getProfile();
-                    profile = profile.withName(getNameToSend(profile.getUUID()));
-                    PlayerInfoData newPlayerInfoData = new PlayerInfoData(profile, playerInfoData.getPing(), playerInfoData.getGameMode(), playerInfoData.getDisplayName());
-                    newPlayerInfoDataList.add(newPlayerInfoData);
-                }
-                event.getPacket().getPlayerInfoDataLists().write(0, newPlayerInfoDataList);
-            }
-        });
-    }
+    private static final List<UUID> foot = new ArrayList<>();
 
     @EventHandler
     public void onInvis(PlayerItemConsumeEvent e) {
         if (POBedwars.getInstance().activeGame) {
             if (e.getItem().getType() == Material.POTION && e.getItem().hasItemMeta()) {
-                ItemStack itemStack;
                 PotionMeta meta = (PotionMeta) e.getItem().getItemMeta();
                 if (meta.hasCustomEffect(PotionEffectType.INVISIBILITY)) {
                     Player p = e.getPlayer();
-                    names.put(p, "");
-                    POBedwars.getInstance().getBedwarsGame().getGameTasks().add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), () -> names.remove(p), 30 * 20));
+                    InventoryUtil.remove(p.getInventory(), new ItemStack(Material.GLASS_BOTTLE));
+                    fakeRemoveArmor(p.getUniqueId());
 
                     BukkitTask stepTask = Bukkit.getScheduler().runTaskTimer(POBedwars.getInstance(), () -> {
                         Location l = p.getLocation(); //Get the player's location
                         l.setY(Math.floor(l.getY())); //Make sure the location's y is an integer
 
-                        if (!l.clone().subtract(0, 1, 0).getBlock().isEmpty()) //Get the block under the player's feet and make sure it exists (This prevents footprints from spawning in the air)
-                        {
+                        if (!l.clone().subtract(0, 1, 0).getBlock().isEmpty()) {
                             double x = Math.cos(Math.toRadians(p.getLocation().getYaw())) * 0.25d; //If you don't understand trigonometry, just think of it as rotating the footprints to the direction the player is looking.
                             double y = Math.sin(Math.toRadians(p.getLocation().getYaw())) * 0.25d;
 
-                            if (foot.get(p)) //This code just modifies the location with the rotation and the current foot
+                            if (foot.contains(p.getUniqueId())) //This code just modifies the location with the rotation and the current foot
                                 l.add(x, 0.025D, y);
                             else
                                 l.subtract(x, -0.025D, y);
 
-                            ParticleEffect.FOOTSTEP.display(0, 0, 0, 0, 2, l, 100); //And finally spawn the footprints in, increase the "2" argument for how dark/visible the footprints should be
-                            foot.put(p, foot.get(p) == null || !foot.get(p)); //Switch to the other foot
+                            PacketPlayOutWorldParticles packet = new PacketPlayOutWorldParticles(EnumParticle.FOOTSTEP, false, (float) l.getX(),(float)  l.getY(), (float) l.getZ(), 0F, 0F, 0F, 1, 0);
+                            for (Player loopPlayer : Bukkit.getOnlinePlayers())
+                                for (int i = 0; i < 2; i++) ((CraftPlayer) loopPlayer).getHandle().playerConnection.sendPacket(packet);
+
+                            if (foot.contains(p.getUniqueId())) foot.remove(p.getUniqueId());
+                            else foot.add(p.getUniqueId());
                         }
-                    }, 5, 5);
+                    }, 5, 10);
 
                     POBedwars.getInstance().getBedwarsGame().getGameTasks().add(stepTask);
-                    POBedwars.getInstance().getBedwarsGame().getGameTasks().add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), stepTask::cancel, 30 * 20));
-
-
+                    POBedwars.getInstance().getBedwarsGame().getGameTasks().add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), () -> {
+                        foot.remove(p.getUniqueId());
+                        stepTask.cancel();
+                        sendActualArmor(p.getUniqueId());
+                    }, 30 * 20));
                 }
             }
         }
     }
 
-    private String getNameToSend(UUID id) {
-        Player p = Bukkit.getPlayer(id);
-        if (!names.containsKey(p) || !POBedwars.getInstance().activeGame) return p.getName();
-        return names.get(p);
+    public static void sendActualArmor(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if(player == null) return;
+        for (int slot = 1; slot <= 4; slot++) {
+            PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(player.getEntityId(), slot, CraftItemStack.asNMSCopy(getItemInSlot(player, slot)));
+            Bukkit.getOnlinePlayers().forEach(loopPlayer -> ((CraftPlayer) loopPlayer).getHandle().playerConnection.sendPacket(packet));
+        }
     }
 
-    public static Map<Player, String> getNames() {
-        return names;
+    public static void fakeRemoveArmor(UUID uuid)  {
+        Player player = Bukkit.getPlayer(uuid);
+        if(player == null) return;
+        for (int slot = 1; slot <= 4; slot++) {
+            PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(player.getEntityId(), slot, CraftItemStack.asNMSCopy(new ItemStack(Material.AIR)));
+            Bukkit.getOnlinePlayers().forEach(loopPlayer -> ((CraftPlayer) loopPlayer).getHandle().playerConnection.sendPacket(packet));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onDamage(EntityDamageByEntityEvent e) {
+        if (POBedwars.getInstance().activeGame) {
+            if (e.getDamager() instanceof Player && e.getEntity() instanceof Player) {
+                if (((Player) e.getEntity()).hasPotionEffect(PotionEffectType.INVISIBILITY)) sendActualArmor(e.getEntity().getUniqueId());
+            }
+        }
+    }
+
+    private static ItemStack getItemInSlot(Player player, int slot)
+    {
+        PlayerInventory inv = player.getInventory();
+        ItemStack item = null;
+        switch (slot) {
+            case 1:
+                item = inv.getBoots();
+                break;
+            case 2:
+                item = inv.getLeggings();
+                break;
+            case 3:
+                item = inv.getChestplate();
+                break;
+            case 4:
+                item = inv.getHelmet();
+                break;
+        }
+
+
+        return item == null || item.getType() == Material.AIR ? null : item;
     }
 }

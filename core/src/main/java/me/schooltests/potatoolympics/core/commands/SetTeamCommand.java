@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public class SetTeamCommand implements CommandExecutor {
-    private final String prefix = "&8[&b&lPotato&6&lOlympics&8] &f";
+    private final String prefix = "&8[&6&lPotato&b&llympics&8] &f";
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

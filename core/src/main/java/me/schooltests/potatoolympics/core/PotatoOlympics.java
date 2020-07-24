@@ -6,10 +6,13 @@ import me.schooltests.potatoolympics.core.commands.StartGameCommand;
 import me.schooltests.potatoolympics.core.data.IGame;
 import me.schooltests.potatoolympics.core.util.ItemBuilder;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffectType;
@@ -39,9 +42,14 @@ public class PotatoOlympics extends JavaPlugin {
         getCommand("setteam").setExecutor(new SetTeamCommand());
 
         Bukkit.getPluginManager().registerEvents(new Listener() {
-            @EventHandler
+            @EventHandler(priority = EventPriority.LOW)
             public void join(PlayerJoinEvent e) {
                 teamManager.addPlayerToOpenTeam(e.getPlayer());
+            }
+
+            @EventHandler(priority = EventPriority.HIGHEST)
+            public void chat(AsyncPlayerChatEvent e) {
+                e.setFormat(ChatColor.GRAY + "[" + teamManager.getTeam(e.getPlayer()).getTeamColor() + "" + ChatColor.BOLD + "TEAM " + (teamManager.getTeams().indexOf(teamManager.getTeam(e.getPlayer())) + 1) + ChatColor.RESET + ChatColor.GRAY + "] " + e.getPlayer().getDisplayName() + ChatColor.RESET + ": " + e.getMessage());
             }
         }, this);
     }

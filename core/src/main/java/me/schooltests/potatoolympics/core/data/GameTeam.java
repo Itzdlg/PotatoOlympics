@@ -18,7 +18,7 @@ public class GameTeam {
     public static List<ChatColor> usableColors = new ArrayList<>(acceptableColors);
 
     private Set<TeamPlayer> players = new HashSet<>();
-    private final ChatColor teamColor = acceptableColors.get(ThreadLocalRandom.current().nextInt(0, acceptableColors.size()));
+    private final ChatColor teamColor = usableColors.get(ThreadLocalRandom.current().nextInt(0, usableColors.size()));
 
     public GameTeam(Player... players) {
         for (Player p : players)

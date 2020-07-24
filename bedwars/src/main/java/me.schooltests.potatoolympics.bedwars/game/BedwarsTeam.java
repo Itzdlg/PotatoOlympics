@@ -1,12 +1,27 @@
 package me.schooltests.potatoolympics.bedwars.game;
 
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.events.InvisEvent;
+import me.schooltests.potatoolympics.bedwars.traps.EnumTrap;
 import me.schooltests.potatoolympics.core.data.GameTeam;
 import me.schooltests.potatoolympics.core.data.TeamPlayer;
 import me.schooltests.potatoolympics.core.util.ItemBuilder;
+import me.schooltests.potatoolympics.core.util.PacketUtil;
 import me.schooltests.potatoolympics.core.util.TeamUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Set;
 
 public class BedwarsTeam {
     private GameTeam gameTeam;
@@ -17,6 +32,7 @@ public class BedwarsTeam {
     private int sharpness = 0;
     private boolean haste = false;
     private boolean healPool = false;
+    private Deque<EnumTrap> trapDeque = new ArrayDeque<>();
 
     public BedwarsTeam(GameTeam team) {
         this.gameTeam = team;
@@ -123,5 +139,38 @@ public class BedwarsTeam {
 
     public void setHealPool(boolean healPool) {
         this.healPool = healPool;
+    }
+
+    public void trapTriggered(Player intruder) {
+        if (!trapDeque.isEmpty() && isInRegion(intruder)) {
+            EnumTrap trap = trapDeque.pollFirst();
+            if (trap != null) {
+                getGameTeam().getTeamMembers().forEach(teamMember -> teamMember.getPlayer().ifPresent(p ->
+                        PacketUtil.sendTitle(p, new PacketUtil.FormattedText("Trap Triggered", ChatColor.RED), new PacketUtil.FormattedText(trap.getName()), 15, 20, 15)));
+                switch (trap) {
+                    case BLIND_AND_SLOW:
+                        intruder.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 4, false, false));
+                        intruder.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 60, 2, false, false));
+                        break;
+                    case ALARM:
+                        if (intruder.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+                            intruder.removePotionEffect(PotionEffectType.INVISIBILITY);
+                            InvisEvent.sendActualArmor(intruder.getUniqueId());
+                        }
+
+                        break;
+                    case MINING_FATIGUE:
+                        intruder.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 100, 0, false, false));
+                        break;
+                }
+            }
+
+            POBedwars.getInstance().getBedwarsGame().getGameTasks().add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), () -> trapTriggered(intruder), 100));
+        }
+    }
+
+    private boolean isInRegion(Player player) {
+        Set<ProtectedRegion> regions = WorldGuardPlugin.inst().getRegionContainer().createQuery().getApplicableRegions(player.getLocation()).getRegions();
+        return regions.stream().anyMatch(r -> r.getId().endsWith(TeamUtil.getDisplayColor(getGameTeam())));
     }
 }

@@ -12,7 +12,7 @@ import org.bukkit.entity.HumanEntity;
 import java.util.Arrays;
 
 public class SetModeCommand implements CommandExecutor {
-    private final String prefix = "&8[&b&lPotato&6&lOlympics&8] &f";
+    private final String prefix = ChatColor.translateAlternateColorCodes('&', "&8[&6&lPotato&b&llympics&8] &f");
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -34,7 +34,7 @@ public class SetModeCommand implements CommandExecutor {
                 new ChatScanner(PotatoOlympics.getInstance(), (HumanEntity) sender, "What mode would you like (SOLO, TEAMS)?")
                         .match(Arrays.asList("solo", "teams"))
                         .handle((raw, match) ->
-                                Bukkit.dispatchCommand(sender, "setmode " + match))
+                                Bukkit.getScheduler().runTask(PotatoOlympics.getInstance(), () -> Bukkit.dispatchCommand(sender, "setmode " + match)))
                         .ifError((err) -> sender.sendMessage(err.msg()))
                         .await(5);
             }

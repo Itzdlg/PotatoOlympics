@@ -113,9 +113,12 @@ public class ItemBuilder implements Listener {
     }
 
     public ItemBuilder color(Color color) {
-        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
-        meta.setColor(color);
-        item.setItemMeta(meta);
+        if (item.getItemMeta() instanceof LeatherArmorMeta) {
+            LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+            meta.setColor(color);
+            item.setItemMeta(meta);
+        }
+
         return this;
     }
 

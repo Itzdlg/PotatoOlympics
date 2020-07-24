@@ -62,6 +62,10 @@ public class TeamUtil {
         }
     }
 
+    public static String getFormatted(String lowercase) {
+        return lowercase.substring(0, 1).toUpperCase() + lowercase.toLowerCase().substring(1);
+    }
+
     public static Color getBukkitColor(GameTeam team) {
         return getBukkitColor(team.getTeamColor());
     }

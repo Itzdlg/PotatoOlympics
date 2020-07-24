@@ -7,6 +7,7 @@ import me.schooltests.potatoolympics.bedwars.generators.BaseGen;
 import me.schooltests.potatoolympics.bedwars.generators.DiamondGen;
 import me.schooltests.potatoolympics.bedwars.generators.EmeraldGen;
 import me.schooltests.potatoolympics.bedwars.generators.IGen;
+import me.schooltests.potatoolympics.bedwars.traps.TrapEvent;
 import me.schooltests.potatoolympics.core.PotatoOlympics;
 import me.schooltests.potatoolympics.core.data.GameTeam;
 import me.schooltests.potatoolympics.core.data.IGame;
@@ -33,6 +34,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,12 +52,12 @@ public class BedwarsGame implements IGame {
     private BedwarsWorldConfig mapConfig;
     private Set<BedwarsTeam> bedwarsTeams;
     private Set<Location> playerPlacedBlocks;
-    private Set<Entity> gameEntities;
     private Map<BedwarsTeam, BaseGen> baseGens;
     private Set<BukkitTask> gameTasks;
     private Map<UUID, AttackInfo> lastAttacks;
     private Set<DiamondGen> diamondGens;
     private Set<EmeraldGen> emeraldGens;
+    private Set<Scoreboard> scoreboards;
 
     private AtomicBoolean announcedDiamondFirst = new AtomicBoolean(false);
     private AtomicBoolean announcedDiamondSecond = new AtomicBoolean(false);
@@ -74,19 +76,20 @@ public class BedwarsGame implements IGame {
         mapConfig = new BedwarsWorldConfig(map);
         bedwarsTeams = new HashSet<>();
         playerPlacedBlocks = new HashSet<>();
-        gameEntities = new HashSet<>();
         baseGens = new HashMap<>();
         gameTasks = new HashSet<>();
         lastAttacks = new HashMap<>();
         diamondGens = new HashSet<>();
         emeraldGens = new HashSet<>();
+        scoreboards = new HashSet<>();
 
         spawnNPCS();
         teleportPlayers();
         startBaseOperations();
         startDiamondGenerators();
         startEmeraldGenerators();
-        createScoreboard();
+
+        Bukkit.getOnlinePlayers().forEach(this::createScoreboard);
     }
 
     @Override
@@ -114,20 +117,21 @@ public class BedwarsGame implements IGame {
             mapConfig.getWorld().getBlockAt(l).setType(Material.AIR);
         playerPlacedBlocks.clear();
 
-        gameEntities.forEach(Entity::remove);
-        Bukkit.getScoreboardManager().getMainScoreboard().getObjective(ChatColor.YELLOW + "" + ChatColor.BOLD + "BEDWARS").unregister();
-        Bukkit.getScoreboardManager().getMainScoreboard().getTeams().forEach(t -> {
-            if (t.getName().startsWith("game_")) t.unregister();
+        scoreboards.forEach(s -> {
+            s.getObjective(ChatColor.YELLOW + "" + ChatColor.BOLD + "BEDWARS").unregister();
+            s.getTeams().forEach(t -> {
+                    if (t.getName().startsWith("game_")) t.unregister();
+            });
         });
 
         mapConfig.getWorld().getEntities().forEach(e -> {
             if (e instanceof ArmorStand) {
                 ArmorStand aS = (ArmorStand) e;
                 if (!aS.isVisible() && aS.getCustomName().startsWith(ChatColor.GOLD + "Spawning in")) e.remove();
-            } else if (e instanceof Item) e.remove();
+            } else if (e instanceof Item || e instanceof Villager) e.remove();
         });
 
-        InvisEvent.getNames().clear();
+        TrapEvent.clearTrapImmune();
     }
 
     private void teleportPlayers() {
@@ -152,6 +156,8 @@ public class BedwarsGame implements IGame {
             baseGens.put(bedwarsTeam, gen);
 
             startGenTimer(gen);
+
+            bedwarsTeam.resetArmor();
         }
     }
 
@@ -195,7 +201,6 @@ public class BedwarsGame implements IGame {
             hologram.setSmall(true);
             hologram.setGravity(false);
             hologram.setCustomNameVisible(true);
-            hologram.setMarker(true);
             hologram.setCustomName(ChatColor.GOLD + "Spawning in " + ChatColor.AQUA + gen.dropWaitTicks()/20 + " seconds");
 
             AtomicInteger dropTime = new AtomicInteger(gen.dropWaitTicks());
@@ -220,7 +225,6 @@ public class BedwarsGame implements IGame {
             villager.setCanPickupItems(false);
 
             villager.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100000, 255, false, false));
-            gameEntities.add(villager);
         }
     }
 
@@ -249,8 +253,13 @@ public class BedwarsGame implements IGame {
         }, gen.firstUpgradeTicks() + gen.secondUpgradeTicks()));
     }
 
-    private void createScoreboard() {
-        Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
+    public void createScoreboard(Player p) {
+        Scoreboard sb = p.getScoreboard();
+        sb.getTeams().forEach(team -> {
+            if (team.getName().startsWith("game_")) team.unregister();
+        });
+        sb.getObjectives().forEach(Objective::unregister);
+
         Objective obj = sb.registerNewObjective(ChatColor.YELLOW + "" + ChatColor.BOLD + "BEDWARS", "dummy");
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -294,15 +303,31 @@ public class BedwarsGame implements IGame {
         yellow.setPrefix(ChatColor.YELLOW + "" + ChatColor.BOLD + "Y" + ChatColor.WHITE + " Yellow: ");
         obj.getScore(ChatColor.BLACK + "" + ChatColor.YELLOW).setScore(6);
 
+        Team blank = sb.registerNewTeam("game_blank");
+        blank.addEntry(ChatColor.WHITE + "" + ChatColor.BLACK);
+        blank.setPrefix(ChatColor.MAGIC + "");
+        obj.getScore(ChatColor.WHITE + "" + ChatColor.BLACK).setScore(5);
+
+        Team points = sb.registerNewTeam("game_points");
+        points.addEntry(ChatColor.WHITE + "" + ChatColor.GOLD);
+        points.setPrefix(ChatColor.GRAY + "» Your ");
+        obj.getScore(ChatColor.WHITE + "" + ChatColor.GOLD).setScore(4);
+
+        scoreboards.add(sb);
+
         gameTasks.add(Bukkit.getScheduler().runTaskTimer(POBedwars.getInstance(), () -> {
-            white.setSuffix(getScoreboardTeamValue("white"));
-            red.setSuffix(getScoreboardTeamValue("red"));
-            green.setSuffix(getScoreboardTeamValue("green"));
-            blue.setSuffix(getScoreboardTeamValue("blue"));
-            aqua.setSuffix(getScoreboardTeamValue("aqua"));
-            pink.setSuffix(getScoreboardTeamValue("pink"));
-            gray.setSuffix(getScoreboardTeamValue("gray"));
-            yellow.setSuffix(getScoreboardTeamValue("yellow"));
+            if (p.isOnline()) {
+                sb.getTeam("game_whiteTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.WHITE ? getScoreboardTeamValue("white") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("white"));
+                sb.getTeam("game_redTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.RED ? getScoreboardTeamValue("red") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("red"));
+                sb.getTeam("game_greenTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.GREEN ? getScoreboardTeamValue("green") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("green"));
+                sb.getTeam("game_blueTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.BLUE ? getScoreboardTeamValue("blue") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("blue"));
+                sb.getTeam("game_aquaTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.AQUA ? getScoreboardTeamValue("aqua") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("aqua"));
+                sb.getTeam("game_pinkTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.LIGHT_PURPLE ? getScoreboardTeamValue("pink") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("pink"));
+                sb.getTeam("game_grayTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.DARK_GRAY ? getScoreboardTeamValue("gray") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("gray"));
+                sb.getTeam("game_yellowTeam").setSuffix(getTeam(p).getGameTeam().getTeamColor() == ChatColor.YELLOW ? getScoreboardTeamValue("yellow") + ChatColor.GRAY + " YOU" : getScoreboardTeamValue("yellow"));
+
+                sb.getTeam("game_points").setSuffix(ChatColor.GRAY + "points: " + ChatColor.GOLD + "" + getTeam(p).getGameTeam().getMember(p).get().getPoints());
+            }
         }, 0L, 10L));
     }
 
@@ -318,7 +343,7 @@ public class BedwarsGame implements IGame {
                 });
 
                 if (numAlive.get() == 0) return ChatColor.RED + SCOREBOARD_XMARK;
-                else return ChatColor.RED + String.valueOf(numAlive.get());
+                else return ChatColor.GREEN + String.valueOf(numAlive.get());
             }
         } else return ChatColor.RED + SCOREBOARD_XMARK;
     }

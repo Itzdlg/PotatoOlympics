@@ -18,7 +18,6 @@ import java.util.Optional;
 
 public class TeamManager {
     private PotatoOlympics plugin = PotatoOlympics.getInstance();
-    private final Scoreboard sb = Objects.requireNonNull(Bukkit.getScoreboardManager().getMainScoreboard());;
     private List<GameTeam> teams = new ArrayList<>();
 
     public void arrangeSolo() {
@@ -72,20 +71,25 @@ public class TeamManager {
     }
 
     public void arrangeTab() {
-        sb.getTeams().forEach(team -> {
-            if (!team.getName().startsWith("game_")) team.unregister();
-        });
-
         for (Player p : Bukkit.getOnlinePlayers()) {
-            GameTeam playerTeam = getTeam(p);
-            Team sbTeam = sb.getTeam(getAlphabeticalChar(teams.indexOf(playerTeam)) + "-TEAM");
-            if (sbTeam == null) {
-                Team newTeam = sb.registerNewTeam(getAlphabeticalChar(teams.indexOf(playerTeam)) + "-TEAM");
-                newTeam.setPrefix(playerTeam.getTeamColor() + "" + ChatColor.BOLD + "TEAM " + (teams.indexOf(playerTeam) + 1) + " " + ChatColor.RESET + ChatColor.GRAY);
-                sbTeam = newTeam;
+            Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
+            sb.getTeams().forEach(team -> {
+                if (!team.getName().startsWith("game_")) team.unregister();
+            });
+
+            for (Player p2 : Bukkit.getOnlinePlayers()) {
+                GameTeam playerTeam = getTeam(p2);
+                Team sbTeam = sb.getTeam(getAlphabeticalChar(teams.indexOf(playerTeam)) + "-TEAM");
+                if (sbTeam == null) {
+                    Team newTeam = sb.registerNewTeam(getAlphabeticalChar(teams.indexOf(playerTeam)) + "-TEAM");
+                    newTeam.setPrefix(playerTeam.getTeamColor() + "" + ChatColor.BOLD + "TEAM " + (teams.indexOf(playerTeam) + 1) + " " + ChatColor.RESET + ChatColor.GRAY);
+                    sbTeam = newTeam;
+                }
+
+                sbTeam.addEntry(p2.getName());
             }
 
-            sbTeam.addEntry(p.getName());
+            p.setScoreboard(sb);
         }
     }
 
