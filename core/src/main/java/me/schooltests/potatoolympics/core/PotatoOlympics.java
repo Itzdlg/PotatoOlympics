@@ -1,5 +1,6 @@
 package me.schooltests.potatoolympics.core;
 
+import me.schooltests.potatoolympics.core.armor.ArmorListener;
 import me.schooltests.potatoolympics.core.commands.SetModeCommand;
 import me.schooltests.potatoolympics.core.commands.SetTeamCommand;
 import me.schooltests.potatoolympics.core.commands.StartGameCommand;
@@ -21,6 +22,7 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -42,16 +44,21 @@ public class PotatoOlympics extends JavaPlugin {
         getCommand("setteam").setExecutor(new SetTeamCommand());
 
         Bukkit.getPluginManager().registerEvents(new Listener() {
-            @EventHandler(priority = EventPriority.LOW)
+            @EventHandler
             public void join(PlayerJoinEvent e) {
-                teamManager.addPlayerToOpenTeam(e.getPlayer());
+                if (!currentGame.isPresent()) e.getPlayer().getInventory().clear();
             }
 
             @EventHandler(priority = EventPriority.HIGHEST)
             public void chat(AsyncPlayerChatEvent e) {
-                e.setFormat(ChatColor.GRAY + "[" + teamManager.getTeam(e.getPlayer()).getTeamColor() + "" + ChatColor.BOLD + "TEAM " + (teamManager.getTeams().indexOf(teamManager.getTeam(e.getPlayer())) + 1) + ChatColor.RESET + ChatColor.GRAY + "] " + e.getPlayer().getDisplayName() + ChatColor.RESET + ": " + e.getMessage());
+                if (teamManager.getTeam(e.getPlayer()) != null)
+                    e.setFormat(ChatColor.GRAY + "[" + teamManager.getTeam(e.getPlayer()).getTeamColor() + "" + ChatColor.BOLD + "TEAM " + (teamManager.getTeams().indexOf(teamManager.getTeam(e.getPlayer())) + 1) + ChatColor.RESET + ChatColor.GRAY + "] " + ChatColor.WHITE + e.getPlayer().getDisplayName() + ChatColor.RESET + ": " + e.getMessage());
+                else
+                    e.setFormat(ChatColor.GRAY + "[] " + ChatColor.WHITE + e.getPlayer().getDisplayName() + ChatColor.RESET + ": " + e.getMessage());
             }
         }, this);
+
+        Bukkit.getPluginManager().registerEvents(new ArmorListener(Collections.emptyList()), this);
     }
 
     @Override

@@ -3,6 +3,7 @@ package me.schooltests.potatoolympics.bedwars.traps;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.Validator;
 import me.schooltests.potatoolympics.bedwars.game.BedwarsGame;
 import me.schooltests.potatoolympics.bedwars.game.BedwarsTeam;
 import me.schooltests.potatoolympics.core.util.TeamUtil;
@@ -29,7 +30,7 @@ public class TrapEvent implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent e) {
-        if (!POBedwars.getInstance().activeGame || trapImmune.containsKey(e.getPlayer().getUniqueId())) return;
+        if (!Validator.isValidPlayer(e.getPlayer()) || trapImmune.containsKey(e.getPlayer().getUniqueId())) return;
         if (e.getFrom().getX() == e.getTo().getX() && e.getFrom().getZ() == e.getTo().getZ()) return;
 
         Location from = e.getFrom();
@@ -45,7 +46,7 @@ public class TrapEvent implements Listener {
 
     @EventHandler
     public void onMagicMilkConsume(PlayerItemConsumeEvent e) {
-        if (POBedwars.getInstance().activeGame && e.getItem() != null && e.getItem().getType() != null && e.getItem().getType() == Material.MILK_BUCKET)
+        if (Validator.isValidPlayer(e.getPlayer()) && e.getItem() != null && e.getItem().getType() != null && e.getItem().getType() == Material.MILK_BUCKET)
             addTrapImmune(e.getPlayer());
     }
 

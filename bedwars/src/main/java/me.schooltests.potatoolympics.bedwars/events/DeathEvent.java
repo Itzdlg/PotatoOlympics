@@ -2,6 +2,7 @@ package me.schooltests.potatoolympics.bedwars.events;
 
 import me.schooltests.potatoolympics.bedwars.AttackInfo;
 import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.Validator;
 import me.schooltests.potatoolympics.bedwars.game.BedwarsGame;
 import me.schooltests.potatoolympics.core.PotatoOlympics;
 import me.schooltests.potatoolympics.core.data.TeamPlayer;
@@ -27,12 +28,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeathEvent implements Listener {
-    private final Set<Material> toDrop = new HashSet<>(Arrays.asList(Material.IRON_INGOT, Material.GOLD_INGOT, Material.DIAMOND, Material.EMERALD));
-    private final Set<Material> toKeep = new HashSet<>(Arrays.asList(Material.WOOD_PICKAXE, Material.IRON_PICKAXE, Material.GOLD_PICKAXE, Material.DIAMOND_PICKAXE, Material.WOOD_AXE, Material.STONE_AXE, Material.IRON_AXE, Material.DIAMOND_AXE));
+    public static final Set<Material> toDrop = new HashSet<>(Arrays.asList(Material.IRON_INGOT, Material.GOLD_INGOT, Material.DIAMOND, Material.EMERALD));
+    public static  final Set<Material> toKeep = new HashSet<>(Arrays.asList(Material.WOOD_PICKAXE, Material.IRON_PICKAXE, Material.GOLD_PICKAXE, Material.DIAMOND_PICKAXE, Material.WOOD_AXE, Material.STONE_AXE, Material.IRON_AXE, Material.DIAMOND_AXE));
 
     @EventHandler
     public void onDeath(EntityDamageEvent e) {
-        if (POBedwars.getInstance().activeGame) {
+        if (Validator.isActiveGame()) {
             if (e.getEntity() instanceof Player && e.getEntity().getLocation().getY() <= 5) {
                 e.setCancelled(true);
 
@@ -67,7 +68,7 @@ public class DeathEvent implements Listener {
                     } else
                         Bukkit.broadcastMessage(game.getTeam(p).getGameTeam().getTeamColor() + p.getName() + " " + ChatColor.GRAY + "has died" + ChatColor.AQUA + "" + ChatColor.BOLD + " FINAL KILL!");
 
-                    final boolean anyAlive = game.getTeam(p).getGameTeam().getTeamMembers().stream().anyMatch(member -> member.getPlayer().isPresent() && member.getPlayer().get().getGameMode() != GameMode.SPECTATOR);
+                    final boolean anyAlive = game.getTeam(p).getGameTeam().getTeamMembers().stream().anyMatch(member -> member.getPlayer().isPresent() && member.getPlayer().get().getGameMode() == GameMode.SURVIVAL);
                     if (!anyAlive) {
                         game.getTeam(p).setDead(true);
                         game.getBaseGenerator(game.getTeam(p)).getDropTask().cancel();
@@ -77,31 +78,7 @@ public class DeathEvent implements Listener {
 
                         PacketUtil.sendTitle(p, new PacketUtil.FormattedText("Elimination", ChatColor.RED, true), new PacketUtil.FormattedText("You have been eliminated!"), 10, 40, 10);
 
-                        AtomicInteger teamsAlive = new AtomicInteger();
-                        game.getBedwarsTeams().forEach(team -> {
-                            boolean isAlive = false;
-                            for (TeamPlayer teamPlayer : team.getGameTeam().getTeamMembers()) {
-                                if (!isAlive && teamPlayer.getPlayer().isPresent() && teamPlayer.getPlayer().get().getGameMode() != GameMode.SPECTATOR)
-                                    isAlive = true;
-                            }
-
-                            if (isAlive) teamsAlive.getAndIncrement();
-                        });
-
-                        if (teamsAlive.get() <= 1) {
-                            game.getBedwarsTeams().forEach(team -> {
-                                team.getGameTeam().getTeamMembers().forEach(member -> {
-                                    member.getPlayer().ifPresent(player -> {
-                                        PacketUtil.sendTitle(player, new PacketUtil.FormattedText("VICTORY!", ChatColor.GOLD, true), null, 10, 40, 10);
-                                        player.sendMessage(ChatColor.GOLD + "+ 30 points (Victory)");
-                                    });
-
-                                    member.addPoints(30);
-                                });
-                            });
-
-                            game.getGameTasks().add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), () -> POBedwars.getInstance().getBedwarsGame().end(), 60));
-                        }
+                        game.checkEndGame();
                     }
                 } else {
                     PacketUtil.sendTitle(p, new PacketUtil.FormattedText("Respawning in 5 seconds"), null, 20, 70, 20);
@@ -127,7 +104,7 @@ public class DeathEvent implements Listener {
         }
     }
 
-    private Material getTierDown(Material m) {
+    public static Material getTierDown(Material m) {
         switch (m) {
             case IRON_PICKAXE:
                 return Material.WOOD_PICKAXE;

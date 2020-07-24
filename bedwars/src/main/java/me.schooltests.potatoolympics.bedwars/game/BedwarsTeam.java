@@ -29,9 +29,8 @@ public class BedwarsTeam {
     private boolean dead = false;
     private ArmorLevel armorLevel = ArmorLevel.LEATHER;
     private int protection = 0;
-    private int sharpness = 0;
+    private boolean sharpness = false;
     private boolean haste = false;
-    private boolean healPool = false;
     private Deque<EnumTrap> trapDeque = new ArrayDeque<>();
 
     public BedwarsTeam(GameTeam team) {
@@ -117,11 +116,11 @@ public class BedwarsTeam {
         this.protection = protection;
     }
 
-    public int getSharpness() {
+    public boolean hasSharpness() {
         return sharpness;
     }
 
-    public void setSharpness(int sharpness) {
+    public void setSharpness(boolean sharpness) {
         this.sharpness = sharpness;
     }
 
@@ -131,14 +130,6 @@ public class BedwarsTeam {
 
     public void setHaste(boolean haste) {
         this.haste = haste;
-    }
-
-    public boolean hasHealPool() {
-        return healPool;
-    }
-
-    public void setHealPool(boolean healPool) {
-        this.healPool = healPool;
     }
 
     public void trapTriggered(Player intruder) {

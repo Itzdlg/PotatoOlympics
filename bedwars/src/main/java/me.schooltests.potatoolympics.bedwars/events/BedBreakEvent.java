@@ -4,6 +4,7 @@ import com.sk89q.worldedit.bukkit.BukkitUtil;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.Validator;
 import me.schooltests.potatoolympics.bedwars.game.BedwarsGame;
 import me.schooltests.potatoolympics.bedwars.game.BedwarsTeam;
 import me.schooltests.potatoolympics.core.data.TeamPlayer;
@@ -23,7 +24,7 @@ import java.util.Set;
 public class BedBreakEvent implements Listener {
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        if (POBedwars.getInstance().activeGame) {
+        if (Validator.isValidPlayer(e.getPlayer())) {
             BedwarsGame game = POBedwars.getInstance().getBedwarsGame();
             if (e.getBlock().getType() == Material.BED || e.getBlock().getType() == Material.BED_BLOCK) {
                 Set<ProtectedRegion> regions = WorldGuardPlugin.inst().getRegionContainer().createQuery().getApplicableRegions(e.getBlock().getLocation()).getRegions();

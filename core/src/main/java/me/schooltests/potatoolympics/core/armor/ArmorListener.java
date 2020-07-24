@@ -1,14 +1,11 @@
-package me.schooltests.potatoolympics.bedwars.armor;
-
-import java.util.Iterator;
-import java.util.List;
+package me.schooltests.potatoolympics.core.armor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event.Result;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.Event.Result;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.ClickType;
@@ -20,6 +17,9 @@ import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Credit to CodingForCookies

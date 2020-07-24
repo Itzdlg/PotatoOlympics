@@ -2,6 +2,7 @@ package me.schooltests.potatoolympics.bedwars.game;
 
 import me.schooltests.potatoolympics.bedwars.AttackInfo;
 import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.Validator;
 import me.schooltests.potatoolympics.bedwars.events.InvisEvent;
 import me.schooltests.potatoolympics.bedwars.generators.BaseGen;
 import me.schooltests.potatoolympics.bedwars.generators.DiamondGen;
@@ -12,6 +13,7 @@ import me.schooltests.potatoolympics.core.PotatoOlympics;
 import me.schooltests.potatoolympics.core.data.GameTeam;
 import me.schooltests.potatoolympics.core.data.IGame;
 import me.schooltests.potatoolympics.core.data.TeamPlayer;
+import me.schooltests.potatoolympics.core.util.PacketUtil;
 import me.schooltests.potatoolympics.core.util.TeamUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -59,10 +61,10 @@ public class BedwarsGame implements IGame {
     private Set<EmeraldGen> emeraldGens;
     private Set<Scoreboard> scoreboards;
 
-    private AtomicBoolean announcedDiamondFirst = new AtomicBoolean(false);
-    private AtomicBoolean announcedDiamondSecond = new AtomicBoolean(false);
-    private AtomicBoolean announcedEmeraldFirst = new AtomicBoolean(false);
-    private AtomicBoolean announcedEmeraldSecond = new AtomicBoolean(false);
+    private AtomicBoolean announcedDiamondFirst;
+    private AtomicBoolean announcedDiamondSecond;
+    private AtomicBoolean announcedEmeraldFirst;
+    private AtomicBoolean announcedEmeraldSecond;
 
     @Override
     public String getName() {
@@ -83,6 +85,11 @@ public class BedwarsGame implements IGame {
         emeraldGens = new HashSet<>();
         scoreboards = new HashSet<>();
 
+        announcedDiamondFirst = new AtomicBoolean(false);
+        announcedDiamondSecond = new AtomicBoolean(false);
+        announcedEmeraldFirst = new AtomicBoolean(false);
+        announcedEmeraldSecond = new AtomicBoolean(false);
+
         spawnNPCS();
         teleportPlayers();
         startBaseOperations();
@@ -90,6 +97,7 @@ public class BedwarsGame implements IGame {
         startEmeraldGenerators();
 
         Bukkit.getOnlinePlayers().forEach(this::createScoreboard);
+        gameTasks.add(Bukkit.getScheduler().runTaskTimer(POBedwars.getInstance(), this::checkEndGame, 180 * 20, 120 * 20));
     }
 
     @Override
@@ -145,6 +153,13 @@ public class BedwarsGame implements IGame {
                 });
             }
         }
+
+        for (Player spectator : Bukkit.getOnlinePlayers()) {
+            if (Validator.isValidPlayer(spectator)) continue;
+            spectator.getInventory().clear();
+            spectator.teleport(new Location(mapConfig.getWorld(), 0, 150, 0));
+            spectator.setGameMode(GameMode.SPECTATOR);
+        }
     }
 
     private void startBaseOperations() {
@@ -158,6 +173,12 @@ public class BedwarsGame implements IGame {
             startGenTimer(gen);
 
             bedwarsTeam.resetArmor();
+
+            gameTasks.add(Bukkit.getScheduler().runTaskTimer(POBedwars.getInstance(), () -> {
+                if (bedwarsTeam.hasHaste()) {
+                    bedwarsTeam.getGameTeam().getTeamMembers().forEach(t -> t.getPlayer().ifPresent(p -> p.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING, 600 * 20, 0, false, false))));
+                }
+            }, 60 * 20, 5 * 20));
         }
     }
 
@@ -346,6 +367,34 @@ public class BedwarsGame implements IGame {
                 else return ChatColor.GREEN + String.valueOf(numAlive.get());
             }
         } else return ChatColor.RED + SCOREBOARD_XMARK;
+    }
+
+    public void checkEndGame() {
+        AtomicInteger teamsAlive = new AtomicInteger();
+        bedwarsTeams.forEach(team -> {
+            boolean isAlive = false;
+            for (TeamPlayer teamPlayer : team.getGameTeam().getTeamMembers()) {
+                if (!isAlive && teamPlayer.getPlayer().isPresent() && Validator.isValidPlayer(teamPlayer.getPlayer().get()))
+                    isAlive = true;
+            }
+
+            if (isAlive) teamsAlive.getAndIncrement();
+        });
+
+        if (teamsAlive.get() <= 1) {
+            bedwarsTeams.forEach(team -> {
+                team.getGameTeam().getTeamMembers().forEach(member -> {
+                    member.getPlayer().ifPresent(player -> {
+                        PacketUtil.sendTitle(player, new PacketUtil.FormattedText("VICTORY!", ChatColor.GOLD, true), null, 10, 40, 10);
+                        player.sendMessage(ChatColor.GOLD + "+ 30 points (Victory)");
+                    });
+
+                    member.addPoints(30);
+                });
+            });
+
+            gameTasks.add(Bukkit.getScheduler().runTaskLater(POBedwars.getInstance(), () -> POBedwars.getInstance().getBedwarsGame().end(), 60));
+        }
     }
 
     public Set<Location> getPlayerPlacedBlocks() {

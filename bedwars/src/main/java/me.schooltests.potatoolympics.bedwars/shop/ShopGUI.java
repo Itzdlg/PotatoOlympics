@@ -91,13 +91,13 @@ public class ShopGUI implements Listener {
 
                 add(Material.STICK, "Knockback Stick", 1, 5, Currency.GOLD, new EnchantInfo(Enchantment.KNOCKBACK, 1));
 
-                if (bedwarsTeam.getSharpness() > 0)
-                    add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON, new EnchantInfo(Enchantment.DAMAGE_ALL, bedwarsTeam.getSharpness()));
+                if (bedwarsTeam.hasSharpness())
+                    add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON, new EnchantInfo(Enchantment.DAMAGE_ALL, 1));
                 else
                     add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON);
 
-                if (bedwarsTeam.getSharpness() > 0)
-                    add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD, new EnchantInfo(Enchantment.DAMAGE_ALL, bedwarsTeam.getSharpness()));
+                if (bedwarsTeam.hasSharpness())
+                    add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD, new EnchantInfo(Enchantment.DAMAGE_ALL, 1));
                 else
                     add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD);
 
@@ -148,15 +148,21 @@ public class ShopGUI implements Listener {
                 add(Material.STICK, "Knockback Stick", 1, 5, Currency.GOLD, new EnchantInfo(Enchantment.KNOCKBACK, 1));
                 add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON);
 
-                if (bedwarsTeam.getSharpness() > 0)
-                    add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON, new EnchantInfo(Enchantment.DAMAGE_ALL, bedwarsTeam.getSharpness()));
+                if (bedwarsTeam.hasSharpness())
+                    add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON, new EnchantInfo(Enchantment.DAMAGE_ALL, 1));
                 else
                     add(Material.STONE_SWORD, "Stone Sword", 1, 10, Currency.IRON);
 
-                if (bedwarsTeam.getSharpness() > 0)
-                    add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD, new EnchantInfo(Enchantment.DAMAGE_ALL, bedwarsTeam.getSharpness()));
+                if (bedwarsTeam.hasSharpness())
+                    add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD, new EnchantInfo(Enchantment.DAMAGE_ALL, 1));
                 else
                     add(Material.IRON_SWORD, "Iron Sword", 1, 7, Currency.GOLD);
+
+                if (bedwarsTeam.hasSharpness())
+                    add(Material.DIAMOND_SWORD, "Diamond Sword", 1, 4, Currency.EMERALD, new EnchantInfo(Enchantment.DAMAGE_ALL, 1));
+                else
+                    add(Material.DIAMOND_SWORD, "Diamond Sword", 1, 4, Currency.EMERALD);
+
                 break;
             case ARMOR:
                 setHeaderCursor(ShopPage.ARMOR);

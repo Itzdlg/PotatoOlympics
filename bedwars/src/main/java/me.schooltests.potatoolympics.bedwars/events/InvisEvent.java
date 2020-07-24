@@ -1,6 +1,7 @@
 package me.schooltests.potatoolympics.bedwars.events;
 
 import me.schooltests.potatoolympics.bedwars.POBedwars;
+import me.schooltests.potatoolympics.bedwars.Validator;
 import me.schooltests.potatoolympics.core.util.InventoryUtil;
 import net.minecraft.server.v1_8_R3.EnumParticle;
 import net.minecraft.server.v1_8_R3.PacketPlayOutEntityEquipment;
@@ -31,7 +32,7 @@ public class InvisEvent implements Listener {
 
     @EventHandler
     public void onInvis(PlayerItemConsumeEvent e) {
-        if (POBedwars.getInstance().activeGame) {
+        if (Validator.isValidPlayer(e.getPlayer())) {
             if (e.getItem().getType() == Material.POTION && e.getItem().hasItemMeta()) {
                 PotionMeta meta = (PotionMeta) e.getItem().getItemMeta();
                 if (meta.hasCustomEffect(PotionEffectType.INVISIBILITY)) {
@@ -92,15 +93,15 @@ public class InvisEvent implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onDamage(EntityDamageByEntityEvent e) {
-        if (POBedwars.getInstance().activeGame) {
+        if (Validator.isActiveGame()) {
             if (e.getDamager() instanceof Player && e.getEntity() instanceof Player) {
+                if (!Validator.isValidPlayer((Player) e.getDamager())) return;
                 if (((Player) e.getEntity()).hasPotionEffect(PotionEffectType.INVISIBILITY)) sendActualArmor(e.getEntity().getUniqueId());
             }
         }
     }
 
-    private static ItemStack getItemInSlot(Player player, int slot)
-    {
+    private static ItemStack getItemInSlot(Player player, int slot) {
         PlayerInventory inv = player.getInventory();
         ItemStack item = null;
         switch (slot) {

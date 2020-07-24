@@ -1,4 +1,4 @@
-package me.schooltests.potatoolympics.bedwars.armor;
+package me.schooltests.potatoolympics.core.armor;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

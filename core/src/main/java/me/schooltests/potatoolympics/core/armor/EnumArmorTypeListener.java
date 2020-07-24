@@ -1,4 +1,4 @@
-package me.schooltests.potatoolympics.bedwars.armor;
+package me.schooltests.potatoolympics.core.armor;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
