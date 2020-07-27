@@ -1,6 +1,7 @@
 package me.schooltests.potatoolympics.core;
 
 import me.schooltests.potatoolympics.core.armor.ArmorListener;
+import me.schooltests.potatoolympics.core.commands.EndGameCommand;
 import me.schooltests.potatoolympics.core.commands.SetModeCommand;
 import me.schooltests.potatoolympics.core.commands.SetTeamCommand;
 import me.schooltests.potatoolympics.core.commands.StartGameCommand;
@@ -40,6 +41,7 @@ public class PotatoOlympics extends JavaPlugin {
         teamManager = new TeamManager();
 
         getCommand("startgame").setExecutor(new StartGameCommand());
+        getCommand("endgame").setExecutor(new EndGameCommand());
         getCommand("setmode").setExecutor(new SetModeCommand());
         getCommand("setteam").setExecutor(new SetTeamCommand());
 

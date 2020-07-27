@@ -15,6 +15,6 @@ public final class Validator {
     }
 
     public static boolean isValidPlayer(Player player) {
-        return isActiveGame() && player.getWorld().getUID().equals(game.getMapConfig().getWorld().getUID()) && game.getTeam(player) != null && player.getGameMode() == GameMode.SURVIVAL;
+        return isActiveGame() && game.getTeam(player) != null && player.getGameMode() == GameMode.SURVIVAL;
     }
 }

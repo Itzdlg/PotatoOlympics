@@ -18,6 +18,11 @@ public class StartGameCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender.isOp()) {
+            if (PotatoOlympics.getInstance().getCurrentGame().isPresent()) {
+                sender.sendMessage(c(prefix + "&cYou can not start games during a game!"));
+                return true;
+            }
+
             if (args.length >= 1) {
                 String gameToStart = args[0].toLowerCase();
                 String map = (args.length >= 2) ? args[1].toLowerCase() : gameToStart;

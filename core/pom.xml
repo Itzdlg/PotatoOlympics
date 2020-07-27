@@ -12,6 +12,8 @@
     <artifactId>core</artifactId>
 
     <properties>
+        <project.directory.computer>C:\Users\Dominick\Desktop\Spigot 1.8.8\plugins</project.directory.computer>
+        <project.directory.laptop>C:\Users\dlg66\OneDrive\Desktop\Spigot 1.8.8\plugins</project.directory.laptop>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -25,7 +27,7 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.1</version>
                 <configuration>
-                    <outputDirectory>C:\Users\Dominick\Desktop\Spigot 1.8.8\plugins</outputDirectory>
+                    <outputDirectory>${project.directory.laptop}</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>

@@ -14,6 +14,8 @@
     </modules>
 
     <properties>
+        <project.directory.computer>C:\Users\Dominick\Desktop\Spigot 1.8.8\plugins</project.directory.computer>
+        <project.directory.laptop>C:\Users\dlg66\OneDrive\Desktop\Spigot 1.8.8\plugins</project.directory.laptop>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>

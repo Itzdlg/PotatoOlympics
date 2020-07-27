@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeathEvent implements Listener {
@@ -42,6 +43,7 @@ public class DeathEvent implements Listener {
 
                 BedwarsGame game = POBedwars.getInstance().getBedwarsGame();
                 AttackInfo attackInfo = game.getLastAttacks().get(e.getEntity().getUniqueId());
+                if (attackInfo != null && TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - attackInfo.getTimeOfAttack()) > 2) attackInfo = null;
                 List<ItemStack> drops = new ArrayList<>();
 
                 for (ItemStack i : p.getInventory().getContents()) {

@@ -16,6 +16,11 @@ public class SetTeamCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender.isOp()) {
+            if (PotatoOlympics.getInstance().getCurrentGame().isPresent()) {
+                sender.sendMessage(c(prefix + "&cYou can not change team settings during a game!"));
+                return true;
+            }
+
             if (args.length >= 2) {
                 List<Player> matched = Bukkit.matchPlayer(args[0]);
                 if (!matched.isEmpty()) {

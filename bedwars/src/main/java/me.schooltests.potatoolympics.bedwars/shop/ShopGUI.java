@@ -82,6 +82,7 @@ public class ShopGUI implements Listener {
         GameTeam team = bedwarsTeam.getGameTeam();
         this.page = page;
         clearShopSlots();
+        clickEvents.clear();
         switch (page) {
             case QUICK_BUY:
                 setHeaderCursor(ShopPage.QUICK_BUY);
@@ -224,8 +225,13 @@ public class ShopGUI implements Listener {
         clickEvents.put(slot, (event) -> {
             if (InventoryUtil.contains(player.getInventory(), new ItemStack(currency.getMaterial(), price))) {
                 ItemBuilder builder = new Purchasable(player).of(material, name, amount, durability, price, currency, false);
-                InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
-                player.getInventory().addItem(builder.get());
+                PlayerPurchaseItemEvent purchaseEvent = new PlayerPurchaseItemEvent(player, builder.get());
+                Bukkit.getPluginManager().callEvent(purchaseEvent);
+
+                if (!event.isCancelled()) {
+                    InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
+                    player.getInventory().addItem(builder.get());
+                }
             }
         });
     }
@@ -244,29 +250,45 @@ public class ShopGUI implements Listener {
             if (InventoryUtil.contains(player.getInventory(), new ItemStack(currency.getMaterial(), price))) {
                 boolean success = true;
                 ItemBuilder builder = new Purchasable(player).of(material, name, amount, 0, price, currency, false);
-                for (EnchantInfo i : enchants)
-                    builder.enchant(i.ench, i.level);
+                PlayerPurchaseItemEvent purchaseEvent = new PlayerPurchaseItemEvent(player, builder.get());
+                Bukkit.getPluginManager().callEvent(purchaseEvent);
 
-                if (builder.get().getType() != Material.WOOD_AXE && builder.get().getType() != Material.WOOD_PICKAXE) player.getInventory().addItem(builder.get());
-                if (builder.get().getType() == Material.IRON_PICKAXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.WOOD_PICKAXE));
-                if (builder.get().getType() == Material.GOLD_PICKAXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.IRON_PICKAXE));
-                if (builder.get().getType() == Material.DIAMOND_PICKAXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.GOLD_PICKAXE));
+                if (!event.isCancelled()) {
+                    for (EnchantInfo i : enchants)
+                        builder.enchant(i.ench, i.level);
 
-                if (builder.get().getType() == Material.STONE_AXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.WOOD_AXE));
-                if (builder.get().getType() == Material.IRON_AXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.STONE_AXE));
-                if (builder.get().getType() == Material.DIAMOND_AXE) InventoryUtil.remove(player.getInventory(), new ItemStack(Material.IRON_AXE));
+                    if (builder.get().getType() != Material.WOOD_AXE && builder.get().getType() != Material.WOOD_PICKAXE)
+                        player.getInventory().addItem(builder.get());
+                    if (builder.get().getType() == Material.IRON_PICKAXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.WOOD_PICKAXE));
+                    if (builder.get().getType() == Material.GOLD_PICKAXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.IRON_PICKAXE));
+                    if (builder.get().getType() == Material.DIAMOND_PICKAXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.GOLD_PICKAXE));
 
-                if (builder.get().getType() == Material.WOOD_PICKAXE) {
-                    if (!InventoryUtil.contains(player.getInventory(), new ItemStack(Material.DIAMOND_PICKAXE))) player.getInventory().addItem(builder.get());
-                    else success = false;
+                    if (builder.get().getType() == Material.STONE_AXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.WOOD_AXE));
+                    if (builder.get().getType() == Material.IRON_AXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.STONE_AXE));
+                    if (builder.get().getType() == Material.DIAMOND_AXE)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(Material.IRON_AXE));
+
+                    if (builder.get().getType() == Material.WOOD_PICKAXE) {
+                        if (!InventoryUtil.contains(player.getInventory(), new ItemStack(Material.DIAMOND_PICKAXE)))
+                            player.getInventory().addItem(builder.get());
+                        else success = false;
+                    }
+
+                    if (builder.get().getType() == Material.WOOD_AXE) {
+                        if (!InventoryUtil.contains(player.getInventory(), new ItemStack(Material.DIAMOND_AXE)))
+                            player.getInventory().addItem(builder.get());
+                        else success = false;
+                    }
+
+                    if (success)
+                        InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
+
                 }
-
-                if (builder.get().getType() == Material.WOOD_AXE) {
-                    if (!InventoryUtil.contains(player.getInventory(), new ItemStack(Material.DIAMOND_AXE))) player.getInventory().addItem(builder.get());
-                    else success = false;
-                }
-
-                if (success) InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
             }
         });
     }
@@ -276,11 +298,16 @@ public class ShopGUI implements Listener {
         inventory.setItem(slot, new Purchasable(player).of(material, name, amount, durability, price, currency, true).color(color).get());
         clickEvents.put(slot, (event) -> {
             if (InventoryUtil.contains(player.getInventory(), new ItemStack(currency.getMaterial(), price))) {
-                InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
                 ItemBuilder builder = new Purchasable(player).of(material, name, amount, durability, price, currency, false);
-                for (PotionEffect effect : potions)
-                    builder.effect(effect);
-                player.getInventory().addItem(builder.color(color).get());
+                PlayerPurchaseItemEvent purchaseEvent = new PlayerPurchaseItemEvent(player, builder.get());
+                Bukkit.getPluginManager().callEvent(purchaseEvent);
+
+                if (!event.isCancelled()) {
+                    InventoryUtil.remove(player.getInventory(), new ItemStack(currency.getMaterial(), price));
+                    for (PotionEffect effect : potions)
+                        builder.effect(effect);
+                    player.getInventory().addItem(builder.color(color).get());
+                }
             }
         });
     }

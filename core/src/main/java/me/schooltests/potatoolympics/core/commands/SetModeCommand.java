@@ -17,6 +17,11 @@ public class SetModeCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender.isOp()) {
+            if (PotatoOlympics.getInstance().getCurrentGame().isPresent()) {
+                sender.sendMessage(c(prefix + "&cYou can not change team settings during a game!"));
+                return true;
+            }
+
             if (args.length >= 1) {
                 switch (args[0].toLowerCase()) {
                     case "solo":

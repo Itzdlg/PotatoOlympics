@@ -5,6 +5,9 @@ commands:
   startgame:
     usage: /startgame
     description: Start a game
+  endgame:
+    usage: /endgame
+    description: End a game
   setmode:
     usage: /setmode
     description: Set the mode of team sorting

@@ -24,11 +24,10 @@ import java.util.List;
 public class JoinLeaveEvent implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void join(PlayerJoinEvent e) {
-        if (Validator.isValidPlayer(e.getPlayer())) {
-            Player p = e.getPlayer();
+        Player p = e.getPlayer();
+        BedwarsGame game = POBedwars.getInstance().getBedwarsGame();
+        if (Validator.isValidPlayer(p)) {
             POBedwars.getInstance().getBedwarsGame().createScoreboard(p);
-
-            BedwarsGame game = POBedwars.getInstance().getBedwarsGame();
             AttackInfo attackInfo = game.getLastAttacks().get(p.getUniqueId());
             List<ItemStack> drops = new ArrayList<>();
 
@@ -53,6 +52,10 @@ public class JoinLeaveEvent implements Listener {
                 for (ItemStack i : drops)
                     p.getInventory().addItem(new ItemBuilder(i).type(DeathEvent.getTierDown(i.getType())).get());
             }, 5 * 20));
+        } else {
+            p.getInventory().clear();
+            p.teleport(new Location(game.getMapConfig().getWorld(), 0, 150, 0));
+            p.setGameMode(GameMode.SPECTATOR);
         }
     }
 
